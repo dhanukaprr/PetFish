@@ -1,282 +1,415 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-// --- Data Types & Constants ---
-interface FishProduct {
-  id: number;
-  name: string;
-  category: string;
-  price: string;
-  image: string;
-  description: string;
-  stats: {
-    temp: string;
-    size: string;
-    care: 'Easy' | 'Intermediate' | 'Expert';
-  };
-}
+// --- Constants & Mock Data ---
 
-const FISH_DATA: FishProduct[] = [
+const PRODUCT_CATEGORIES = [
+  { id: 'all', name: 'ALL AQUA', icon: '🌊' },
+  { id: 'fish', name: 'FISH', icon: '🐠' },
+  { id: 'corals', name: 'CORALS', icon: '🪸' },
+  { id: 'plants', name: 'PLANTS', icon: '🌿' },
+  { id: 'supplies', name: 'SUPPLIES', icon: '🫧' }
+];
+
+const PRODUCTS = [
   {
     id: 1,
-    name: "Royal Blue Betta",
-    category: "Freshwater",
-    price: "$24.99",
-    image: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=400",
-    description: "Elegant flowing fins with deep cobalt pigmentation.",
-    stats: { temp: "75-80°F", size: "2.5 inches", care: "Easy" }
+    name: "TROPICAL MIX",
+    desc: "Premium flakes for vibrant scales",
+    price: "$29.99 / 500G",
+    category: 'supplies',
+    image: "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=400",
+    rating: 5,
+    color: '#FF9A24'
   },
   {
     id: 2,
-    name: "Golden Discus",
-    category: "Freshwater",
-    price: "$89.99",
-    image: "https://images.unsplash.com/photo-1535591273668-578e31182c4f?auto=format&fit=crop&q=80&w=400",
-    description: "The 'King of the Aquarium', known for its vibrant yellow hue.",
-    stats: { temp: "82-86°F", size: "6 inches", care: "Expert" }
+    name: "ALGAE WAFER",
+    desc: "Sinking nutrition for bottom feeders",
+    price: "$19.99 / 200G",
+    category: 'supplies',
+    image: "https://images.unsplash.com/photo-1520244030490-675e47c1f836?auto=format&fit=crop&q=80&w=400",
+    rating: 4,
+    color: '#FFC529'
   },
   {
     id: 3,
-    name: "Neon Tetra",
-    category: "Freshwater",
-    price: "$3.50",
-    image: "https://images.unsplash.com/photo-1524704659690-3f7a3fe19bb7?auto=format&fit=crop&q=80&w=400",
-    description: "Schooling fish that adds electric blue streaks to any tank.",
-    stats: { temp: "70-81°F", size: "1.5 inches", care: "Easy" }
-  },
-  {
-    id: 4,
-    name: "Clown Anemonefish",
-    category: "Saltwater",
-    price: "$45.00",
+    name: "VITALITY PELLETS",
+    desc: "Slow-release growth formula",
+    price: "$34.99 / 400G",
+    category: 'supplies',
     image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=400",
-    description: "Iconic orange and white stripes, perfect for reef tanks.",
-    stats: { temp: "72-78°F", size: "3 inches", care: "Intermediate" }
-  },
-  {
-    id: 5,
-    name: "Blue Tang",
-    category: "Saltwater",
-    price: "$75.00",
-    image: "https://images.unsplash.com/photo-1520244030490-675e47c1f836?auto=format&fit=crop&q=80&w=400",
-    description: "Brilliant blue body with a striking black 'palette' mark.",
-    stats: { temp: "72-82°F", size: "12 inches", care: "Intermediate" }
-  },
-  {
-    id: 6,
-    name: "Ghost Shrimp",
-    category: "Invertebrates",
-    price: "$1.99",
-    image: "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=400",
-    description: "Transparent scavengers that keep your aquarium floor clean.",
-    stats: { temp: "65-80°F", size: "1.5 inches", care: "Easy" }
+    rating: 5,
+    color: '#A5E6B4'
   }
 ];
 
-// --- Components ---
+const TESTIMONIALS = [
+  {
+    name: "AMELIA WRIGHT",
+    location: "USA",
+    text: "My reef tank feels healthier and more vibrant than ever. The service is always smooth, and I trust their biology-first approach completely.",
+    image: "https://i.pravatar.cc/150?u=amelia",
+    color: '#FFC529'
+  },
+  {
+    name: "JORDAN CLARK",
+    location: "CANADA",
+    text: "Great selection, fast delivery, and helpful guidance. It's my go-to place whenever I need something specific for my marine setup.",
+    image: "https://i.pravatar.cc/150?u=jordan",
+    color: '#A5E6B4'
+  },
+  {
+    name: "SOFIA REED",
+    location: "UK",
+    text: "I love how truly personal their advice is. Every purchase has been worth it, and my Discus are thriving under their care plan.",
+    image: "https://i.pravatar.cc/150?u=sofia",
+    color: '#FF9A24'
+  }
+];
 
-const Navbar = ({ activePage, setActivePage }: { activePage: string, setActivePage: (p: string) => void }) => {
-  return (
-    <nav style={styles.nav}>
-      <div style={styles.navContainer}>
-        <h1 style={styles.logo} onClick={() => setActivePage('home')}>AQUAAURA</h1>
-        <div style={styles.navLinks}>
-          {['home', 'products', 'contact'].map(page => (
-            <button
-              key={page}
-              onClick={() => setActivePage(page)}
-              style={{
-                ...styles.navBtn,
-                color: activePage === page ? 'var(--primary)' : 'var(--light)',
-                borderBottom: activePage === page ? '2px solid var(--primary)' : 'none'
-              }}
-            >
-              {page.toUpperCase()}
-            </button>
-          ))}
-        </div>
-      </div>
-    </nav>
-  );
-};
+// --- Sub-components ---
 
-const Hero = ({ onExplore }: { onExplore: () => void }) => {
-  return (
-    <section style={styles.hero}>
-      <div style={styles.heroContent}>
-        <span style={styles.badge}>EST 2025</span>
-        <h1 style={styles.heroTitle}>Breathe Life Into Your <br/><span style={styles.gradientText}>Aquatic Haven</span></h1>
-        <p style={styles.heroSubtitle}>Discover the rarest species and premium supplies for your underwater world.</p>
-        <div style={styles.heroActions}>
-          <button style={styles.primaryBtn} onClick={onExplore}>View Collection</button>
-          <button style={styles.secondaryBtn}>Learn More</button>
-        </div>
-      </div>
-      <div style={styles.floatingBubbles}>
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className={`bubble bubble-${i}`} style={styles.bubble}></div>
-        ))}
-      </div>
-    </section>
-  );
-};
+const Button = ({ children, variant = 'primary', onClick, style }: any) => {
+  const baseStyle: React.CSSProperties = {
+    padding: '0.8rem 2rem',
+    borderRadius: '15px',
+    fontWeight: '700',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    border: 'none',
+    transition: 'all 0.2s ease',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    ...style
+  };
 
-const Features = () => {
-  const features = [
-    { title: "Expert Support", desc: "Biologist-led team available 24/7." },
-    { title: "Ethical Sourcing", desc: "100% sustainably raised specimens." },
-    { title: "Next-Day Delivery", desc: "Temperature-controlled shipping." }
-  ];
-
-  return (
-    <section style={styles.section}>
-      <div style={styles.grid}>
-        {features.map((f, i) => (
-          <div key={i} style={styles.glassCard}>
-            <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>{f.title}</h3>
-            <p style={{ opacity: 0.8 }}>{f.desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
-const Products = () => {
-  const [filter, setFilter] = useState('All');
-  const filtered = filter === 'All' ? FISH_DATA : FISH_DATA.filter(f => f.category === filter);
-
-  return (
-    <section style={styles.section}>
-      <div style={styles.sectionHeader}>
-        <h2 style={styles.sectionTitle}>Current Specimens</h2>
-        <div style={styles.filterGroup}>
-          {['All', 'Freshwater', 'Saltwater', 'Invertebrates'].map(f => (
-            <button 
-              key={f} 
-              onClick={() => setFilter(f)}
-              style={{
-                ...styles.filterBtn,
-                backgroundColor: filter === f ? 'var(--primary)' : 'transparent',
-                color: filter === f ? 'var(--dark)' : 'var(--light)'
-              }}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div style={styles.productGrid}>
-        {filtered.map(fish => (
-          <div key={fish.id} style={styles.productCard}>
-            <div style={styles.imgWrapper}>
-              <img src={fish.image} alt={fish.name} style={styles.productImg} />
-              <span style={styles.priceTag}>{fish.price}</span>
-            </div>
-            <div style={styles.productInfo}>
-              <h3 style={{ marginBottom: '0.5rem' }}>{fish.name}</h3>
-              <p style={styles.productDesc}>{fish.description}</p>
-              <div style={styles.statsContainer}>
-                <div style={styles.statItem}><span>Size:</span> {fish.stats.size}</div>
-                <div style={styles.statItem}><span>Care:</span> {fish.stats.care}</div>
-              </div>
-              <button style={styles.cartBtn}>Inquiry Details</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
-const Contact = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-  const [status, setStatus] = useState<string | null>(null);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      alert("Please fill all fields.");
-      return;
-    }
-    setStatus("Sent Successfully!");
-    setTimeout(() => {
-      setStatus(null);
-      setFormData({ name: '', email: '', message: '' });
-    }, 3000);
+  const variants: any = {
+    primary: { backgroundColor: 'var(--primary)', color: 'white' },
+    secondary: { backgroundColor: 'var(--green)', color: 'var(--secondary)' },
+    outline: { backgroundColor: 'transparent', border: '2px solid var(--secondary)', color: 'var(--secondary)' },
+    brown: { backgroundColor: 'var(--brown)', color: 'white' }
   };
 
   return (
-    <section style={styles.section}>
-      <div style={styles.contactContainer}>
-        <div style={styles.contactInfo}>
-          <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Get in Touch</h2>
-          <p style={{ marginBottom: '2rem', opacity: 0.8 }}>Looking for a specific breed? Our experts can source rare specimens globally.</p>
-          <div style={styles.infoLine}>📍 123 Reef Avenue, Ocean City, OC</div>
-          <div style={styles.infoLine}>📞 (555) 123-FISH</div>
-          <div style={styles.infoLine}>✉️ hello@aquaaura.com</div>
-        </div>
-        <form style={styles.contactForm} onSubmit={handleSubmit}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Name</label>
-            <input 
-              style={styles.input} 
-              placeholder="Your Name" 
-              value={formData.name}
-              onChange={e => setFormData({...formData, name: e.target.value})}
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Email</label>
-            <input 
-              style={styles.input} 
-              type="email" 
-              placeholder="your@email.com" 
-              value={formData.email}
-              onChange={e => setFormData({...formData, email: e.target.value})}
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Inquiry Message</label>
-            <textarea 
-              style={{ ...styles.input, height: '120px', resize: 'none' }} 
-              placeholder="Tell us about your tank setup..."
-              value={formData.message}
-              onChange={e => setFormData({...formData, message: e.target.value})}
-            />
-          </div>
-          <button type="submit" style={styles.primaryBtn}>Send Message</button>
-          {status && <div style={styles.toast}>{status}</div>}
-        </form>
-      </div>
-    </section>
+    <button style={{ ...baseStyle, ...variants[variant] }} onClick={onClick}>
+      {children}
+    </button>
   );
 };
 
-const Footer = () => (
-  <footer style={styles.footer}>
-    <div style={styles.footerTop}>
-      <div>
-        <h2 style={styles.logo}>AQUAAURA</h2>
-        <p style={{ opacity: 0.6, marginTop: '1rem' }}>Bringing the ocean's depth to your living room.</p>
-      </div>
-      <div style={styles.footerLinks}>
-        <div style={styles.linkCol}>
-          <h4>Shop</h4>
-          <span>Freshwater</span>
-          <span>Saltwater</span>
-          <span>Accessories</span>
+const SectionHeading = ({ title, subtitle, centered = false }: any) => (
+  <div style={{ textAlign: centered ? 'center' : 'left', marginBottom: '3rem' }}>
+    <h2 style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--secondary)', lineHeight: 1.1, textTransform: 'uppercase' }}>
+      {title}
+    </h2>
+    {subtitle && <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '1rem', maxWidth: '600px', marginLeft: centered ? 'auto' : '0', marginRight: centered ? 'auto' : '0' }}>
+      {subtitle}
+    </p>}
+  </div>
+);
+
+// --- Pages ---
+
+const Home = ({ setActivePage }: any) => {
+  return (
+    <div>
+      {/* Hero Section */}
+      <section style={styles.hero}>
+        <div style={styles.heroContent}>
+          <h1 style={styles.heroTitle}>VIBRANT <br/> WAVES</h1>
+          <p style={styles.heroSubtitle}>
+            We bring health, beauty, and harmony to your tank — because your aquatic friends deserve nothing less than joy.
+          </p>
+          <div style={styles.heroCTA}>
+            <div style={styles.heroSmallCard}>
+              <img src="https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=150" style={styles.heroSmallImg} />
+              <div>
+                <p style={{ fontWeight: 700, fontSize: '0.8rem' }}>TANK CARE MADE SIMPLE</p>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Expert advice for every finny friend.</p>
+                <button style={styles.inlineBtn} onClick={() => setActivePage('products')}>Shop Now</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div style={styles.linkCol}>
-          <h4>Company</h4>
-          <span>About Us</span>
-          <span>Shipping</span>
-          <span>Returns</span>
+
+        <div style={styles.heroGraphic}>
+          <div style={styles.blobContainer}>
+            <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=800" style={styles.heroMainImg} />
+          </div>
+          {/* Circular floaties */}
+          <div style={{ ...styles.floatCircle, top: '0', right: '0', background: 'var(--primary)' }}>🐠</div>
+          <div style={{ ...styles.floatCircle, bottom: '20%', left: '-20px', background: 'var(--yellow)' }}>🐚</div>
+          <div style={{ ...styles.floatCircle, top: '20%', left: '-40px', background: 'var(--green)' }}>🫧</div>
+        </div>
+
+        <div style={styles.heroStats}>
+          <div style={styles.heroStatItem}>
+            <div style={{ ...styles.statIcon, backgroundColor: 'var(--yellow)' }}>🏆</div>
+            <div>
+              <p style={styles.statNum}>14</p>
+              <p style={styles.statText}>years experience</p>
+            </div>
+          </div>
+          <div style={styles.heroStatItem}>
+            <div style={{ ...styles.statIcon, backgroundColor: 'var(--primary)' }}>🐠</div>
+            <div>
+              <p style={styles.statNum}>850+</p>
+              <p style={styles.statText}>rare species</p>
+            </div>
+          </div>
+          <div style={styles.heroStatItem}>
+            <div style={{ ...styles.statIcon, backgroundColor: 'var(--green)' }}>📦</div>
+            <div>
+              <p style={styles.statNum}>42</p>
+              <p style={styles.statText}>shipping zones</p>
+            </div>
+          </div>
+          <div style={styles.heroStatItem}>
+            <div style={{ ...styles.statIcon, backgroundColor: 'var(--brown)' }}>🫧</div>
+            <div>
+              <p style={styles.statNum}>12K+</p>
+              <p style={styles.statText}>happy tanks</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Pills */}
+      <section style={styles.featurePillsSection}>
+        <div style={styles.featurePillRow}>
+          <div style={{ ...styles.featurePill, background: '#303030', color: 'white' }}>
+            <span style={{ fontSize: '1.5rem' }}>🌊</span>
+            <div>
+              <p style={{ fontWeight: 700 }}>YOUR TANK'S NEEDS</p>
+              <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>Tailored plans for your setup.</p>
+            </div>
+          </div>
+          <div style={{ ...styles.featurePill, background: 'var(--primary)', color: 'white' }}>
+            <span style={{ fontSize: '1.5rem' }}>🥗</span>
+            <div>
+              <p style={{ fontWeight: 700 }}>SMART NUTRITION</p>
+              <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>Vet-approved aquatic meals.</p>
+            </div>
+          </div>
+          <div style={{ ...styles.featurePill, background: '#303030', color: 'white' }}>
+            <span style={{ fontSize: '1.5rem' }}>🛡️</span>
+            <div>
+              <p style={{ fontWeight: 700 }}>CARE WITH LOVE</p>
+              <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>Live arrival guarantee.</p>
+            </div>
+          </div>
+          <div style={{ ...styles.featurePill, background: '#303030', color: 'white' }}>
+            <span style={{ fontSize: '1.5rem' }}>✨</span>
+            <div>
+              <p style={{ fontWeight: 700 }}>HAPPY AQUA STORIES</p>
+              <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>55+ real tales of success.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Appointment Bar */}
+      <div style={styles.appointmentBar}>
+        <Button variant="brown">Schedule Consultation 📅</Button>
+        <p style={{ flex: 1, margin: '0 2rem', fontWeight: 600 }}>We're here to make aqua care easier, kinder, and full of life — every single day.</p>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {[1, 2, 3].map(i => <div key={i} style={styles.miniAvatar}>🐠</div>)}
+        </div>
+      </div>
+
+      {/* About Section */}
+      <section style={styles.section}>
+        <div style={styles.aboutGrid}>
+          <div style={styles.aboutImages}>
+            <div style={{ ...styles.aboutImgCard, background: '#F8BBD0' }}>
+              <img src="https://images.unsplash.com/photo-1524704659690-3f7a3fe19bb7?auto=format&fit=crop&q=80&w=400" style={styles.aboutImg} />
+            </div>
+            <div style={{ ...styles.aboutImgCard, background: '#E8F5E9', marginTop: '-100px', marginLeft: '100px' }}>
+              <img src="https://images.unsplash.com/photo-1535591273668-578e31182c4f?auto=format&fit=crop&q=80&w=400" style={styles.aboutImg} />
+            </div>
+          </div>
+          <div>
+            <SectionHeading title="ABOUT US" subtitle="" />
+            <h3 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1.5rem' }}>BETTER CARE FOR YOUR BEST FINNY FRIEND</h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+              Our aquatic center focuses on more than just selling. We offer preventative care, water chemistry checkups, and compassionate support for both you and your pet.
+            </p>
+            <Button variant="secondary">Explore Services</Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories & Nutrition */}
+      <section style={{ ...styles.section, textAlign: 'center' }}>
+        <SectionHeading title="TOP AQUATIC CATEGORIES & NUTRITION" subtitle="We offer carefully selected food and products focused on nutrition, wellness, and daily care for all aquatic life." centered />
+        
+        <div style={styles.categoryFilters}>
+          {PRODUCT_CATEGORIES.map(cat => (
+            <button key={cat.id} style={styles.catFilterBtn}>
+              <span style={styles.catIcon}>{cat.icon}</span> {cat.name}
+            </button>
+          ))}
+        </div>
+
+        <div style={styles.productGrid}>
+          {PRODUCTS.map(product => (
+            <div key={product.id} style={styles.productCard}>
+              <div style={{ ...styles.productImgBox, background: product.color }}>
+                <img src={product.image} style={styles.productImg} />
+              </div>
+              <div style={styles.productInfo}>
+                <h4 style={styles.productName}>{product.name}</h4>
+                <p style={styles.productDesc}>{product.desc}</p>
+                <p style={styles.productPrice}>{product.price}</p>
+                <div style={styles.ratingRow}>
+                  {'⭐'.repeat(product.rating)}
+                </div>
+                <div style={styles.cartIcon}>🛒</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Inspiration Section */}
+      <section style={{ ...styles.section, background: '#FFF' }}>
+        <div style={styles.inspireGrid}>
+          <div style={styles.inspireLeft}>
+             <img src="https://images.unsplash.com/photo-1520244030490-675e47c1f836?auto=format&fit=crop&q=80&w=600" style={styles.inspireImg} />
+          </div>
+          <div>
+            <SectionHeading title="WHAT INSPIRES OUR AQUA CARE?" subtitle="We rescue, nourish, and protect aquatic life with love — giving them comfort, safety, and a second chance." />
+            <div style={styles.inspireList}>
+              <div style={styles.inspireItem}>
+                <span>6890 - REEFS SAVED</span> <span style={{ fontSize: '1.5rem' }}>👉</span>
+              </div>
+              <div style={styles.inspireItem}>
+                <span>529 - FOREVER TANKS</span> <span style={{ fontSize: '1.5rem' }}>👉</span>
+              </div>
+              <div style={styles.inspireItem}>
+                <span>3418 - THANKFUL VOICES</span> <span style={{ fontSize: '1.5rem' }}>👉</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section style={{ ...styles.section, textAlign: 'center' }}>
+        <SectionHeading title="WHAT PEOPLE SAY ABOUT US" subtitle="Real stories from people who trust us with their aquatic friends' wellness and daily care." centered />
+        <Button variant="secondary" style={{ marginBottom: '4rem' }}>Read More Reviews</Button>
+        
+        <div style={styles.testimonialGrid}>
+          {TESTIMONIALS.map((t, idx) => (
+            <div key={idx} style={{ ...styles.testimonialCard, backgroundColor: t.color }}>
+              <span style={styles.quoteMark}>"</span>
+              <p style={styles.testimonialText}>{t.text}</p>
+              <div style={styles.testimonialUser}>
+                <img src={t.image} style={styles.testimonialAvatar} />
+                <div style={{ textAlign: 'left' }}>
+                  <p style={{ fontWeight: 800 }}>{t.name}</p>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>{t.location}</p>
+                </div>
+              </div>
+              <span style={{ ...styles.quoteMark, bottom: '20px', right: '20px', top: 'auto' }}>"</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+};
+
+const ProductsPage = () => {
+  return (
+    <div style={styles.section}>
+      <SectionHeading title="OUR FULL COLLECTION" subtitle="Browse our wide selection of aquatic friends and premium supplies." />
+      <div style={styles.productGrid}>
+        {/* Reuse Product Card but with expanded data */}
+        {Array(8).fill(0).map((_, i) => (
+           <div key={i} style={styles.productCard}>
+           <div style={{ ...styles.productImgBox, background: i % 2 === 0 ? 'var(--primary)' : 'var(--green)' }}>
+             <img src={`https://images.unsplash.com/photo-${1516734212186 + i}-a967f81ad0d7?auto=format&fit=crop&q=80&w=400`} style={styles.productImg} />
+           </div>
+           <div style={styles.productInfo}>
+             <h4 style={styles.productName}>SPECIMEN #{i + 101}</h4>
+             <p style={styles.productDesc}>Healthy and quarantined aquatic life</p>
+             <p style={styles.productPrice}>$49.99</p>
+             <div style={styles.ratingRow}>⭐⭐⭐⭐⭐</div>
+             <div style={styles.cartIcon}>🛒</div>
+           </div>
+         </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const ContactPage = () => {
+  return (
+    <div style={styles.section}>
+      <div style={styles.contactContainer}>
+        <div style={styles.contactForm}>
+          <SectionHeading title="GET IN TOUCH" subtitle="Have questions about your tank? Our experts are here to help." />
+          <input style={styles.input} placeholder="Full Name" />
+          <input style={styles.input} placeholder="Email Address" />
+          <textarea style={{ ...styles.input, height: '150px' }} placeholder="Tell us about your setup..."></textarea>
+          <Button variant="primary">Send Inquiry</Button>
+        </div>
+        <div style={styles.contactImage}>
+           <img src="https://images.unsplash.com/photo-1520244030490-675e47c1f836?auto=format&fit=crop&q=80&w=800" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }} />
         </div>
       </div>
     </div>
-    <div style={styles.footerBottom}>
-      © 2025 AquaAura. Designed for a sustainable future.
+  );
+};
+
+const Navbar = ({ activePage, setActivePage }: any) => (
+  <nav style={styles.nav}>
+    <div style={styles.logoGroup} onClick={() => setActivePage('home')}>
+      <div style={styles.logoCircle}>🐠</div>
+      <h1 style={styles.logoText}>AQUAAURA</h1>
+    </div>
+    <div style={styles.navLinks}>
+      {['home', 'shop', 'about', 'adoption', 'tips', 'contact'].map(link => (
+        <button 
+          key={link} 
+          onClick={() => setActivePage(link === 'home' ? 'home' : (link === 'shop' ? 'products' : (link === 'contact' ? 'contact' : 'home')))}
+          style={{ ...styles.navLink, fontWeight: (activePage === link || (link === 'shop' && activePage === 'products')) ? 700 : 400 }}
+        >
+          {link.toUpperCase()}
+        </button>
+      ))}
+    </div>
+    <Button variant="secondary" onClick={() => setActivePage('contact')}>Book Now</Button>
+  </nav>
+);
+
+const Footer = () => (
+  <footer style={styles.footer}>
+    <div style={styles.footerInner}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4rem' }}>
+        <div style={styles.logoGroup}>
+          <div style={styles.logoCircle}>🐠</div>
+          <h1 style={{ ...styles.logoText, color: 'white' }}>AQUAAURA</h1>
+        </div>
+        <div style={{ display: 'flex', gap: '3rem', color: 'white', fontWeight: 600 }}>
+          <span>SHOP</span>
+          <span>ABOUT US</span>
+          <span>ADOPTION</span>
+          <span>CONTACT</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: 'rgba(255,255,255,0.6)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2rem' }}>
+        <p>© AquaAura Boutique. All rights reserved.</p>
+        <p>+91 9810920699</p>
+        <p>Designed for Harmony</p>
+      </div>
+      <div style={styles.footerImgWrap}>
+        <img src="https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=800" style={styles.footerImg} />
+      </div>
     </div>
   </footer>
 );
@@ -284,46 +417,15 @@ const Footer = () => (
 const App = () => {
   const [activePage, setActivePage] = useState('home');
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [activePage]);
-
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar activePage={activePage} setActivePage={setActivePage} />
       <main style={{ flex: 1 }}>
-        {activePage === 'home' && (
-          <>
-            <Hero onExplore={() => setActivePage('products')} />
-            <Features />
-          </>
-        )}
-        {activePage === 'products' && <Products />}
-        {activePage === 'contact' && <Contact />}
+        {activePage === 'home' && <Home setActivePage={setActivePage} />}
+        {activePage === 'products' && <ProductsPage />}
+        {activePage === 'contact' && <ContactPage />}
       </main>
       <Footer />
-      
-      {/* Global CSS for animations */}
-      <style>{`
-        @keyframes bubbleFloat {
-          0% { transform: translateY(0) scale(1); opacity: 0.1; }
-          50% { opacity: 0.4; }
-          100% { transform: translateY(-500px) scale(1.5); opacity: 0; }
-        }
-        .bubble {
-          position: absolute;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 50%;
-          pointer-events: none;
-          animation: bubbleFloat 10s infinite linear;
-        }
-        .bubble-0 { width: 40px; height: 40px; left: 10%; animation-delay: 0s; }
-        .bubble-1 { width: 20px; height: 20px; left: 30%; animation-delay: 2s; }
-        .bubble-2 { width: 60px; height: 60px; left: 50%; animation-delay: 4s; }
-        .bubble-3 { width: 30px; height: 30px; left: 70%; animation-delay: 1s; }
-        .bubble-4 { width: 50px; height: 50px; left: 90%; animation-delay: 3s; }
-        .bubble-5 { width: 25px; height: 25px; left: 15%; animation-delay: 5s; }
-      `}</style>
     </div>
   );
 };
@@ -332,296 +434,432 @@ const App = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   nav: {
+    padding: '1.5rem 5%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'var(--bg-warm)',
     position: 'sticky',
     top: 0,
-    zIndex: 1000,
-    backgroundColor: 'rgba(10, 25, 47, 0.85)',
-    backdropFilter: 'blur(10px)',
-    borderBottom: '1px solid var(--glass-border)',
-    height: '80px',
+    zIndex: 1000
+  },
+  logoGroup: {
     display: 'flex',
     alignItems: 'center',
+    gap: '0.8rem',
+    cursor: 'pointer'
   },
-  navContainer: {
-    width: '90%',
-    maxWidth: '1200px',
-    margin: '0 auto',
+  logoCircle: {
+    width: '45px',
+    height: '45px',
+    backgroundColor: 'white',
+    borderRadius: '50%',
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.8rem',
+    boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
   },
-  logo: {
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    letterSpacing: '2px',
-    cursor: 'pointer',
-    color: 'var(--primary)',
+  logoText: {
+    fontSize: '1.2rem',
+    fontWeight: 800,
+    letterSpacing: '1px'
   },
   navLinks: {
     display: 'flex',
-    gap: '2rem',
+    gap: '1.5rem'
   },
-  navBtn: {
+  navLink: {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    fontWeight: 600,
-    padding: '0.5rem 0',
-    transition: 'all 0.3s ease',
-  },
-  hero: {
-    minHeight: '80vh',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-    padding: '2rem',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  heroContent: {
-    maxWidth: '800px',
-    zIndex: 2,
-  },
-  badge: {
-    backgroundColor: 'rgba(0, 210, 255, 0.1)',
-    color: 'var(--primary)',
-    padding: '0.4rem 1rem',
-    borderRadius: '50px',
-    fontSize: '0.8rem',
-    fontWeight: 'bold',
-    marginBottom: '1rem',
-    display: 'inline-block',
-  },
-  heroTitle: {
-    fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
-    lineHeight: 1.1,
-    marginBottom: '1.5rem',
-  },
-  gradientText: {
-    background: 'linear-gradient(45deg, #00d2ff, #3a7bd5)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  heroSubtitle: {
-    fontSize: '1.2rem',
-    opacity: 0.8,
-    marginBottom: '2rem',
-    maxWidth: '600px',
-    margin: '0 auto 2rem auto',
-  },
-  heroActions: {
-    display: 'flex',
-    gap: '1rem',
-    justifyContent: 'center',
-  },
-  primaryBtn: {
-    padding: '1rem 2.5rem',
-    borderRadius: '10px',
-    border: 'none',
-    backgroundColor: 'var(--primary)',
-    color: 'var(--dark)',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    transition: 'transform 0.2s, background-color 0.2s',
-  },
-  secondaryBtn: {
-    padding: '1rem 2.5rem',
-    borderRadius: '10px',
-    border: '1px solid var(--primary)',
-    backgroundColor: 'transparent',
-    color: 'var(--primary)',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
+    fontSize: '0.85rem',
+    color: 'var(--secondary)',
+    transition: 'opacity 0.2s'
   },
   section: {
     padding: '6rem 5%',
-    maxWidth: '1200px',
+    maxWidth: '1400px',
     margin: '0 auto',
-    width: '100%',
+    width: '100%'
   },
-  grid: {
+  hero: {
+    padding: '4rem 5%',
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gridTemplateColumns: '1fr 1fr 100px',
     gap: '2rem',
-  },
-  glassCard: {
-    background: 'var(--glass)',
-    border: '1px solid var(--glass-border)',
-    padding: '2rem',
-    borderRadius: '20px',
-    backdropFilter: 'blur(5px)',
-    transition: 'transform 0.3s ease',
-  },
-  sectionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
+    maxWidth: '1400px',
+    margin: '0 auto',
     alignItems: 'center',
+    minHeight: '80vh',
+    position: 'relative'
+  },
+  heroContent: {
+    maxWidth: '550px'
+  },
+  heroTitle: {
+    fontSize: 'clamp(3rem, 10vw, 7rem)',
+    lineHeight: 0.9,
+    fontWeight: 900,
+    color: 'var(--secondary)',
+    marginBottom: '2rem'
+  },
+  heroSubtitle: {
+    fontSize: '1.1rem',
+    color: 'var(--text-muted)',
     marginBottom: '3rem',
-    flexWrap: 'wrap',
-    gap: '1rem',
+    maxWidth: '400px'
   },
-  sectionTitle: {
-    fontSize: '2.5rem',
-  },
-  filterGroup: {
+  heroSmallCard: {
     display: 'flex',
-    gap: '0.5rem',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '1.5rem',
+    backgroundColor: 'white',
+    padding: '1.2rem',
+    borderRadius: '25px',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+    maxWidth: '350px'
   },
-  filterBtn: {
-    padding: '0.5rem 1.2rem',
-    borderRadius: '50px',
-    border: '1px solid var(--glass-border)',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    fontSize: '0.9rem',
+  heroSmallImg: {
+    width: '80px',
+    height: '80px',
+    borderRadius: '20px',
+    objectFit: 'cover'
+  },
+  inlineBtn: {
+    background: 'var(--green)',
+    border: 'none',
+    padding: '0.3rem 1rem',
+    borderRadius: '20px',
+    fontSize: '0.75rem',
+    fontWeight: 700,
+    marginTop: '0.5rem',
+    cursor: 'pointer'
+  },
+  heroGraphic: {
+    position: 'relative',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  blobContainer: {
+    width: '100%',
+    aspectRatio: '1',
+    backgroundColor: 'var(--primary)',
+    borderRadius: '50% 50% 30% 70% / 60% 40% 60% 40%',
+    overflow: 'hidden',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0 30px 60px rgba(255, 154, 36, 0.2)'
+  },
+  heroMainImg: {
+    width: '110%',
+    height: '110%',
+    objectFit: 'cover'
+  },
+  floatCircle: {
+    position: 'absolute',
+    width: '60px',
+    height: '60px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '2rem',
+    boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
+    zIndex: 2
+  },
+  heroStats: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2.5rem',
+    justifyContent: 'center'
+  },
+  heroStatItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem'
+  },
+  statIcon: {
+    width: '50px',
+    height: '50px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.4rem',
+    color: 'white'
+  },
+  statNum: {
+    fontSize: '1.8rem',
+    fontWeight: 800,
+    lineHeight: 1
+  },
+  statText: {
+    fontSize: '0.75rem',
+    color: 'var(--text-muted)',
+    fontWeight: 600
+  },
+  featurePillsSection: {
+    padding: '2rem 5%',
+    maxWidth: '1400px',
+    margin: '0 auto'
+  },
+  featurePillRow: {
+    display: 'flex',
+    gap: '1.5rem',
+    flexWrap: 'wrap'
+  },
+  featurePill: {
+    flex: 1,
+    minWidth: '250px',
+    padding: '2.5rem',
+    borderRadius: '30px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.5rem'
+  },
+  appointmentBar: {
+    margin: '4rem 5%',
+    padding: '1rem 3rem',
+    backgroundColor: 'white',
+    borderRadius: '60px',
+    display: 'flex',
+    alignItems: 'center',
+    boxShadow: '0 15px 40px rgba(0,0,0,0.03)'
+  },
+  miniAvatar: {
+    width: '35px',
+    height: '35px',
+    borderRadius: '50%',
+    backgroundColor: '#eee',
+    border: '2px solid white',
+    marginLeft: '-10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1rem'
+  },
+  aboutGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '6rem',
+    alignItems: 'center'
+  },
+  aboutImages: {
+    position: 'relative',
+    height: '500px'
+  },
+  aboutImgCard: {
+    width: '350px',
+    height: '400px',
+    borderRadius: '40px',
+    overflow: 'hidden',
+    padding: '2rem'
+  },
+  aboutImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    borderRadius: '30px'
+  },
+  categoryFilters: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '1rem',
+    marginBottom: '4rem',
+    flexWrap: 'wrap'
+  },
+  catFilterBtn: {
+    backgroundColor: 'white',
+    border: 'none',
+    padding: '0.8rem 1.5rem',
+    borderRadius: '40px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.8rem',
+    fontWeight: 700,
+    fontSize: '0.85rem',
+    boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+    cursor: 'pointer'
+  },
+  catIcon: {
+    fontSize: '1.2rem'
   },
   productGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: '2.5rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '2.5rem'
   },
   productCard: {
-    background: 'var(--glass)',
-    borderRadius: '20px',
+    backgroundColor: 'white',
+    borderRadius: '40px',
     overflow: 'hidden',
-    border: '1px solid var(--glass-border)',
-    transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    paddingBottom: '2rem',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.02)',
+    transition: 'transform 0.3s ease'
   },
-  imgWrapper: {
-    position: 'relative',
-    height: '240px',
+  productImgBox: {
+    height: '350px',
+    margin: '1rem',
+    borderRadius: '30px',
     overflow: 'hidden',
+    padding: '2rem'
   },
   productImg: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
-    transition: 'transform 0.5s ease',
-  },
-  priceTag: {
-    position: 'absolute',
-    top: '1rem',
-    right: '1rem',
-    background: 'rgba(10, 25, 47, 0.8)',
-    backdropFilter: 'blur(5px)',
-    padding: '0.4rem 0.8rem',
-    borderRadius: '50px',
-    color: 'var(--primary)',
-    fontWeight: 'bold',
+    objectFit: 'contain'
   },
   productInfo: {
-    padding: '1.5rem',
+    padding: '1.5rem 2rem',
+    position: 'relative'
+  },
+  productName: {
+    fontSize: '1.3rem',
+    fontWeight: 800,
+    textTransform: 'uppercase',
+    marginBottom: '0.5rem'
   },
   productDesc: {
-    opacity: 0.7,
+    color: 'var(--text-muted)',
     fontSize: '0.9rem',
-    marginBottom: '1rem',
-    minHeight: '2.7rem',
+    marginBottom: '1rem'
   },
-  statsContainer: {
+  productPrice: {
+    fontSize: '1.4rem',
+    fontWeight: 800
+  },
+  ratingRow: {
+    marginTop: '1rem'
+  },
+  cartIcon: {
+    position: 'absolute',
+    bottom: '2rem',
+    right: '2rem',
+    width: '45px',
+    height: '45px',
+    backgroundColor: 'var(--brown)',
+    borderRadius: '15px',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer'
+  },
+  inspireGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '5rem',
+    alignItems: 'center'
+  },
+  inspireLeft: {
+    borderRadius: '50px',
+    overflow: 'hidden',
+    height: '500px'
+  },
+  inspireImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+  },
+  inspireList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem'
+  },
+  inspireItem: {
+    backgroundColor: 'var(--bg-warm)',
+    padding: '1.5rem 2.5rem',
+    borderRadius: '20px',
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: '1.5rem',
-    fontSize: '0.85rem',
+    alignItems: 'center',
+    fontWeight: 700,
+    fontSize: '1.1rem'
   },
-  statItem: {
-    background: 'rgba(255,255,255,0.05)',
-    padding: '0.3rem 0.7rem',
-    borderRadius: '5px',
+  testimonialGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gap: '2rem'
   },
-  cartBtn: {
+  testimonialCard: {
+    padding: '3rem 2.5rem',
+    borderRadius: '40px',
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+  quoteMark: {
+    position: 'absolute',
+    top: '20px',
+    left: '20px',
+    fontSize: '4rem',
+    opacity: 0.2,
+    fontWeight: 900
+  },
+  testimonialText: {
+    fontSize: '1.1rem',
+    fontWeight: 500,
+    marginBottom: '2.5rem',
+    lineHeight: 1.6
+  },
+  testimonialUser: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem'
+  },
+  testimonialAvatar: {
+    width: '50px',
+    height: '50px',
+    borderRadius: '50%',
+    objectFit: 'cover'
+  },
+  footer: {
+    backgroundColor: 'var(--secondary)',
+    padding: '6rem 5% 4rem 5%',
+    position: 'relative',
+    marginTop: '150px'
+  },
+  footerInner: {
+    maxWidth: '1400px',
+    margin: '0 auto'
+  },
+  footerImgWrap: {
+    position: 'absolute',
+    bottom: 0,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '300px',
+    height: '250px',
+    zIndex: 1
+  },
+  footerImg: {
     width: '100%',
-    padding: '0.8rem',
-    borderRadius: '10px',
-    border: 'none',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    color: 'var(--light)',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
+    height: '100%',
+    objectFit: 'contain'
   },
   contactContainer: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+    gridTemplateColumns: '1fr 1fr',
     gap: '4rem',
-  },
-  contactInfo: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  infoLine: {
-    marginBottom: '1rem',
-    fontSize: '1.1rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
+    alignItems: 'center'
   },
   contactForm: {
-    background: 'var(--glass)',
-    padding: '3rem',
-    borderRadius: '30px',
-    border: '1px solid var(--glass-border)',
-    position: 'relative',
-  },
-  formGroup: {
-    marginBottom: '1.5rem',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '0.5rem',
-    fontSize: '0.9rem',
-    opacity: 0.8,
-  },
-  input: {
-    width: '100%',
-    padding: '1rem',
-    borderRadius: '10px',
-    border: '1px solid var(--glass-border)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    color: 'white',
-    outline: 'none',
-  },
-  toast: {
-    marginTop: '1.5rem',
-    color: '#00ff9d',
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  footer: {
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    padding: '4rem 5% 2rem 5%',
-    marginTop: 'auto',
-  },
-  footerTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    paddingBottom: '3rem',
-    borderBottom: '1px solid var(--glass-border)',
-    flexWrap: 'wrap',
-    gap: '3rem',
-  },
-  footerLinks: {
-    display: 'flex',
-    gap: '4rem',
-    flexWrap: 'wrap',
-  },
-  linkCol: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.8rem',
+    gap: '1.5rem'
   },
-  footerBottom: {
-    textAlign: 'center',
-    paddingTop: '2rem',
-    opacity: 0.5,
-    fontSize: '0.8rem',
-  },
+  input: {
+    padding: '1.2rem',
+    borderRadius: '20px',
+    border: '1px solid #ddd',
+    backgroundColor: 'white',
+    outline: 'none',
+    fontSize: '1rem'
+  }
 };
 
 const rootElement = document.getElementById('root');
